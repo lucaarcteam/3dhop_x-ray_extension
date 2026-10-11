@@ -1,0 +1,12 @@
+Models in this folder: hand_skin.ply, hand_bones.ply, hand_rings.ply
+License: CC BY-SA 4.0  (https://creativecommons.org/licenses/by-sa/4.0/)
+
+Derived from the Z-Anatomy open 3D atlas of human anatomy
+(https://www.z-anatomy.com), (c) Gauthier Kervyn and contributors,
+licensed CC BY-SA 4.0.
+
+Z-Anatomy builds on BodyParts3D / Anatomography (DBCLS,
+https://lifesciencedb.jp/bp3d/), licensed CC BY-SA 2.1 JP.
+
+If you redistribute these files (or derivatives), keep the attribution above
+and the CC BY-SA 4.0 license.
