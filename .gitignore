@@ -9,3 +9,6 @@ Thumbs.db
 # Python (helper scripts, if any)
 __pycache__/
 *.pyc
+
+# Local AI orientation memory + helper scripts (NEVER push)
+no_push/
