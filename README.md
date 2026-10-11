@@ -2,6 +2,8 @@
 
 **Version 2.0** — real-time x-ray transparency slider for 3DHOP.
 
+[![Release](https://img.shields.io/github/v/release/lucaarcteam/3dhop_x-ray_extension?sort=semver&label=latest%20release&color=1785c8)](https://github.com/lucaarcteam/3dhop_x-ray_extension/releases)
+
 An **x-ray view** extension for [3DHOP](https://www.3dhop.net) (3D Heritage Online Presenter).
 
 It loads two aligned meshes of the same subject — an outer *container* surface and an
@@ -27,6 +29,16 @@ The demo runs on **GitHub Pages** (static files, no server-side code): orbit / z
 pan with the 3DHOP trackball, toggle x-ray from the toolbar, drag the intensity
 slider for the real-time transparency, and measure distances in millimetres with the
 measure tool.
+
+## Releases
+
+- **v2.0** *(latest)* — real-time transparency slider, measure tool in mm, Röntgen
+  demo subject (left hand with rings).
+  https://github.com/lucaarcteam/3dhop_x-ray_extension/releases/tag/v2.0
+- **v1.0** — original x-ray view between two models (Luca Bezzi / Arc-Team).
+  https://github.com/lucaarcteam/3dhop_x-ray_extension/releases/tag/v1.0
+
+Every release ships its own **Source code (zip / tar.gz)** archive.
 
 ## Features
 
