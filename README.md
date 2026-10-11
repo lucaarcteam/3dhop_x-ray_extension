@@ -19,6 +19,15 @@ the outer skin shell plus the bones (and two rings) inside.
    └────────────────────┘          └────────────────────┘
 ```
 
+## Live demo
+
+<p><a href="https://lucaarcteam.github.io/3dhop_x-ray_extension/x-ray.html" target="_blank" rel="noopener">🖐️ <strong>Open the live hand demo</strong></a> &nbsp;<em>(opens in a new window)</em></p>
+
+The demo runs on **GitHub Pages** (static files, no server-side code): orbit / zoom /
+pan with the 3DHOP trackball, toggle x-ray from the toolbar, drag the intensity
+slider for the real-time transparency, and measure distances in millimetres with the
+measure tool.
+
 ## Features
 
 - Toggle **x-ray** on/off from the toolbar.
@@ -162,6 +171,22 @@ coordinate system.
 - removed the extra always-visible transparent instance (single container instance,
   transparency toggled directly) — no more ghosting/z-fighting;
 - documented the project, fixed the folder layout, added `.gitignore`.
+
+## Authorship
+
+Version **1.0** of this extension was developed by **Luca Bezzi**
+([Arc-Team](https://www.arc-team.com/)) as part of the **3D documentation project of the
+Similaun (Ötzi) mummy** and its associated Copper Age equipment — the context that
+originally produced the x-ray view application. Reference:
+
+> Bezzi, L.; Bezzi, A.; Gietl, R.; Moraes, C.; Vallazza, E.; Guareschi, E.E.; Tauber, M.;
+> Peschel, O.; Pernter, P.; Putzer, A. *Preserving the Past: The 3D Documentation of Ötzi,
+> the Iceman Mummy, and Its Archaeological Context.* **Heritage** 2026, *9*(9), 339.
+> <https://www.mdpi.com/2571-9408/9/9/339>
+
+The **v2.x** releases — the real-time transparency slider, the measure tool and the
+Röntgen-inspired demo subject — are the implementation and evolution of that first
+application.
 
 ## Credits
 
