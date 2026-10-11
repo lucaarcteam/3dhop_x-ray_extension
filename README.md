@@ -34,10 +34,8 @@ measure tool.
 - **v2.0 slider**: continuously regulates the x-ray intensity of the outer shell
   in real time (0% = only the skeleton, 100% = densest ghost; default 90% = the
   classic `0.9`).
-- Standard 3DHOP **measure tool** (mm).
-- Orbit / zoom / pan with the 3DHOP trackball.
-- Optional plane **sections** (reveal the skeleton with clipping planes).
-- Fullscreen.
+- Standard 3DHOP tools: measurements (in mm), orbit / zoom / pan trackball, plane
+  sections (clipping) and fullscreen.
 - Runs entirely in the browser; no server-side code. Just static files.
 
 ## Running it
