@@ -43,9 +43,9 @@ Every release ships its own **Source code (zip / tar.gz)** archive.
 ## Features
 
 - Toggle **x-ray** on/off from the toolbar.
-- **v2.0 slider**: continuously regulates the x-ray intensity of the outer shell
-  in real time (0% = only the skeleton, 100% = densest ghost; default 90% = the
-  classic `0.9`).
+- **v2.0 slider**: sets the outer shell opacity in real time — **100% = fully
+  opaque**, **0% = fully transparent** (only the skeleton), smooth fade in
+  between (default 90%).
 - Standard 3DHOP tools: measurements (in mm), orbit / zoom / pan trackball, plane
   sections (clipping) and fullscreen.
 - Runs entirely in the browser; no server-side code. Just static files.
@@ -91,25 +91,36 @@ Three instances share the scene:
 - `internal_model` — the bones (always present, but hidden inside the shell);
 - `ring_model` — the rings, always opaque (they stay visible in the x-ray view).
 
-Clicking the **x-ray** button calls:
+Transparency is applied with the native
+`Presenter.setInstanceTransparencyByName('external_model', true, redraw, alpha)`
+API, where `alpha` is the shell **opacity** (1 = opaque, 0 = invisible).
 
-```js
-presenter.setInstanceTransparencyByName('external_model', true, true, XRAY_ALPHA);
-```
+Stock 3DHOP renders transparent instances **additively**
+(`gl.blendFunc(SRC_ALPHA, ONE)`): the object behind is never attenuated, so the
+shell could never look truly opaque and there was a hard visual jump when
+switching back to the normal (opaque) pass. `x-ray.html` rewrites **only** that
+one blend call to standard alpha compositing (`SRC_ALPHA, ONE_MINUS_SRC_ALPHA`),
+so the opacity fades smoothly and 0% really is invisible. The overlays used by
+the measure / picked-point tools also call `(SRC_ALPHA, ONE)`, but with
+`depthFunc GREATER`; they are detected via the depth function and left additive.
+The shared 3DHOP core files are never edited.
 
-and clicking it again restores the opaque shell. `XRAY_ALPHA` is defined at the top
-of the script block in `x-ray.html` and is set to **0.9**, the value used in the
-original Similaun-mummy project (a lower value makes the whole thing less readable).
+### v2.0 — real-time opacity slider
 
-> Note: 3DHOP renders transparency with additive blending
-> (`gl.blendFunc(SRC_ALPHA, ONE)`), so the shell behaves like a faint "ghost"
-> rather than physical glass. Lower `XRAY_ALPHA` → more see-through.
+The **X-Ray intensity slider** (bottom centre) maps linearly onto the shell
+opacity in real time:
 
-### v2.0 — real-time slider
+- **100% = fully opaque** — normal, depth-tested render (skeleton hidden);
+- **0% = fully transparent** — only the skeleton (and the rings) show;
+- in between: a smooth fade (`alpha = pct / 100`).
 
-The **X-Ray intensity slider** (bottom centre) maps linearly onto that same
-`alpha` in real time and turns x-ray on while dragging. The toolbar button stays
-as an on/off shortcut that re-uses the slider's current value.
+The default is **90%** (a slightly transparent hand). The toolbar **x-ray**
+button stays as an on/off shortcut: off → 100% opaque, on → the last value below
+100% (default 90%). This is the same tool used in the Similaun-mummy project.
+
+> Implementation detail: the 3DHOP API treats `alpha = 0` as "not provided", so
+> the slider clamps the value to a tiny `XRAY_ALPHA_MIN = 0.0001` (visually
+> indistinguishable from 0).
 
 ### Measure tool (mm)
 
@@ -161,8 +172,9 @@ coordinate system.
 
 **v2.0** (this revision):
 
-- added the **X-Ray intensity slider** (bottom centre, always active): dragging it
-  enables x-ray and updates the shell's transparency in real time;
+- added the **X-Ray intensity slider** (bottom centre, always active): 100% = fully
+  opaque, 0% = fully transparent, dragged live (classic alpha compositing, so the
+  opacity fades smoothly instead of the stock additive "ghost");
 - fixed slider dragging against `#3dhop`'s `mousedown` preventDefault;
 - added the standard 3DHOP **measure tool** with millimetre calibration and a
   localised "Lunghezza misurata" box (the stock `measure`/`measure_on` icons and

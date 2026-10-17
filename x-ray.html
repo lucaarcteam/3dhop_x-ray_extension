@@ -104,7 +104,7 @@
  <canvas id="draw-canvas" style="background-image: url('skins/backgrounds/dark_mano_della_morte.jpg');"></canvas>
 
 <!--X-RAY INTENSITY SLIDER (v2.0)-->
- <div id="xray-slider" onmousedown="event.stopPropagation()" title="Intensità dei raggi X: 0% = solo scheletro, 100% = guscio più denso">
+ <div id="xray-slider" onmousedown="event.stopPropagation()" title="0% = mano trasparente (solo scheletro) &#183; 100% = mano opaca">
   <label for="xrayRange">Intensità&#160;X-Ray</label>
   <input id="xrayRange" type="range" min="0" max="100" step="1" value="90"/>
   <span id="xrayValue">90%</span>
@@ -116,14 +116,44 @@
 <script type="text/javascript">
 var presenter = null;
 
-// X-Ray transparency (same value used in the original Similaun-mummy project).
-// The container shell is drawn with additive blending, so higher = brighter/denser ghost.
-var XRAY_ALPHA = 0.9;
-var xrayEnabled = false;
-var xrayAlpha   = XRAY_ALPHA;
+// X-Ray transparency. The container shell is rendered with CLASSIC alpha
+// compositing (see the blend rewrite in setup3dhop), so alpha ~= opacity:
+//   slider 100% -> shell fully OPAQUE  (transparency switched off: normal render)
+//   slider   0% -> shell fully TRANSPARENT (invisible: only the skeleton shows)
+//   in between  -> smooth fade, alpha = pct/100 (higher = more opaque)
+// Default 90% = a slightly transparent hand (near-opaque). Same tool as the
+// Similaun-mummy project.
+var XRAY_ALPHA     = 0.9;       // default opacity
+var XRAY_ALPHA_MIN = 0.0001;    // the 3DHOP API treats alpha 0 as "not provided"; use a tiny value
+var xrayPercent      = Math.round(XRAY_ALPHA * 100);   // current slider value (90)
+var lastGhostPercent = xrayPercent;                    // last x-ray value < 100 (used by the toggle)
 
 function setup3dhop() {
 	presenter = new Presenter("draw-canvas");
+
+	// --- X-Ray: use classic alpha compositing for the transparent shell -------- //
+	// Stock 3DHOP renders transparent instances ADDITIVELY (blendFunc
+	// SRC_ALPHA, ONE = "src + dst"): the object behind is never attenuated, so the
+	// shell can never look truly opaque and there is a hard visual "jump" when we
+	// switch to the normal pass at 100%.
+	// Here we rewrite ONLY that one blend call to standard alpha blending
+	// (SRC_ALPHA, ONE_MINUS_SRC_ALPHA = "src*a + dst*(1-a)"), so the shell opacity
+	// grows smoothly: alpha 1 -> opaque, alpha 0 -> invisible.
+	// The measure / picked-point overlays also call (SRC_ALPHA, ONE) but with
+	// depthFunc GREATER (they must stay glowing beyond the geometry), so we detect
+	// them via depthFunc and leave them additive. The shared 3DHOP core is untouched.
+	(function useAlphaForTransparency(gl) {
+		var currentDepthFunc = gl.LESS;                       // onInitialize sets LESS
+		var realDepthFunc = gl.depthFunc.bind(gl);
+		gl.depthFunc = function (func) { currentDepthFunc = func; return realDepthFunc(func); };
+
+		var realBlendFunc = gl.blendFunc.bind(gl);
+		gl.blendFunc = function (sfactor, dfactor) {
+			if (sfactor === gl.SRC_ALPHA && dfactor === gl.ONE && currentDepthFunc !== gl.GREATER)
+				return realBlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+			return realBlendFunc(sfactor, dfactor);
+		};
+	})(presenter.ui.gl);
 
 	presenter.setScene({
 		meshes: {
@@ -184,40 +214,50 @@ function setup3dhop() {
 }
 
 // +++ X-RAY +++ //
-// apply a given alpha to the outer shell (used by both the toolbar button and the slider)
-function setXrayAlpha(alpha, redraw) {
-	xrayAlpha = Math.max(0.0, Math.min(1.0, alpha));
-	presenter.setInstanceTransparencyByName('external_model', true, redraw, xrayAlpha);
-}
+// Reconcile the whole UI to a given slider percentage and apply it to the shell.
+function applyXrayPercent(pct, syncUI) {
+	pct = Math.max(0, Math.min(100, Math.round(pct)));
+	xrayPercent = pct;
 
-function xraySwitch(on) {
-	if(on === undefined) on = !xrayEnabled;
-	xrayEnabled = on;
+	if (pct >= 100) {
+		// 100% = fully opaque shell: normal, depth-tested rendering (skeleton hidden)
+		presenter.setInstanceTransparencyByName('external_model', false, true);
+	} else {
+		// 0..99% = alpha-blended shell; alpha 0 is falsy in the 3DHOP API, so clamp it
+		var alpha = Math.max(pct / 100.0, XRAY_ALPHA_MIN);
+		presenter.setInstanceTransparencyByName('external_model', true, true, alpha);
+	}
 
-	if(on){
+	if (syncUI) {
+		jQuery('#xrayRange').val(pct);
+		jQuery('#xrayValue').text(pct + '%');
+	}
+
+	// toolbar icon reflects "x-ray active" = anything below fully opaque
+	if (pct < 100) {
 		jQuery('#x-ray').css("visibility", "hidden");
 		jQuery('#x-ray_on').css("visibility", "visible");
-		// make the outer shell see-through so the skeleton (and the rings) show inside
-		setXrayAlpha(xrayAlpha, true);
-	}
-	else{
+	} else {
 		jQuery('#x-ray_on').css("visibility", "hidden");
 		jQuery('#x-ray').css("visibility", "visible");
-		// restore the opaque shell
-		presenter.setInstanceTransparencyByName('external_model', false, true);
 	}
 }
 
-// v2.0 : real-time slider. Dragging it turns X-Ray on and updates the shell alpha live.
+// Toolbar button: on/off shortcut.
+// OFF -> fully opaque (100%); ON -> the last x-ray value below 100% (default 90%).
+function xraySwitch() {
+	if (xrayPercent >= 100) applyXrayPercent(lastGhostPercent, true);
+	else                    applyXrayPercent(100, true);
+}
+
+// Real-time slider: 0% = fully transparent, 100% = fully opaque, live.
 function xraySliderUpdate(value) {
 	var pct = parseInt(value, 10);
 	if (isNaN(pct)) pct = Math.round(XRAY_ALPHA * 100);
 	pct = Math.max(0, Math.min(100, pct));
+	if (pct < 100) lastGhostPercent = pct;
 	jQuery('#xrayValue').text(pct + '%');
-	xrayEnabled = true;
-	jQuery('#x-ray').css("visibility", "hidden");
-	jQuery('#x-ray_on').css("visibility", "visible");
-	setXrayAlpha(pct / 100.0, true);
+	applyXrayPercent(pct, false);
 }
 // +++ X-RAY +++ //
 
@@ -262,6 +302,9 @@ $(document).ready(function(){
 	jQuery('#xrayRange').on('input change', function(){
 		xraySliderUpdate(this.value);
 	});
+
+	// start with the shell slightly transparent (default 90% = slightly transparent hand)
+	applyXrayPercent(xrayPercent, true);
 });
 </script>
 
