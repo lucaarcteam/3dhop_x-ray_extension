@@ -1,6 +1,6 @@
 # 3DHOP X-Ray Extension
 
-**Version 2.0** — real-time x-ray transparency slider for 3DHOP.
+**Version 2.1** — real-time x-ray opacity slider for 3DHOP.
 
 [![Release](https://img.shields.io/github/v/release/lucaarcteam/3dhop_x-ray_extension?sort=semver&label=latest%20release&color=1785c8)](https://github.com/lucaarcteam/3dhop_x-ray_extension/releases)
 
@@ -32,7 +32,10 @@ measure tool.
 
 ## Releases
 
-- **v2.0** *(latest)* — real-time transparency slider, measure tool in mm, Röntgen
+- **v2.1** *(latest)* — opacity slider (fully opaque ↔ fully transparent, classic
+  alpha compositing) and corrected millimetre calibration.
+  https://github.com/lucaarcteam/3dhop_x-ray_extension/releases/tag/v2.1
+- **v2.0** — real-time transparency slider, measure tool in mm, Röntgen
   demo subject (left hand with rings).
   https://github.com/lucaarcteam/3dhop_x-ray_extension/releases/tag/v2.0
 - **v1.0** — original x-ray view between two models (Luca Bezzi / Arc-Team).
@@ -43,7 +46,7 @@ Every release ships its own **Source code (zip / tar.gz)** archive.
 ## Features
 
 - Toggle **x-ray** on/off from the toolbar.
-- **v2.0 slider**: sets the outer shell opacity in real time — **100% = fully
+- **Opacity slider**: sets the outer shell opacity in real time — **100% = fully
   opaque**, **0% = fully transparent** (only the skeleton), smooth fade in
   between (default 90%).
 - Standard 3DHOP tools: measurements (in mm), orbit / zoom / pan trackball, plane
@@ -80,8 +83,9 @@ python3 -m http.server 8000
 ```
 
 The x-ray logic lives entirely in `x-ray.html` — the 3DHOP core (`js/presenter.js`)
-is **stock upstream code**, not patched. The effect uses the native
-`Presenter.setInstanceTransparencyByName()` API.
+is **stock upstream code**, never edited on disk; the only tweak is a runtime
+`gl.blendFunc` rewrite in the page (explained below). Transparency itself uses the
+native `Presenter.setInstanceTransparencyByName()` API.
 
 ## How it works
 
@@ -105,7 +109,7 @@ the measure / picked-point tools also call `(SRC_ALPHA, ONE)`, but with
 `depthFunc GREATER`; they are detected via the depth function and left additive.
 The shared 3DHOP core files are never edited.
 
-### v2.0 — real-time opacity slider
+### Real-time opacity slider
 
 The **X-Ray intensity slider** (bottom centre) maps linearly onto the shell
 opacity in real time:
@@ -128,7 +132,8 @@ The standard 3DHOP measure tool is wired to `presenter._onEndMeasurement`.
 3DHOP reports measurements in raw (model) units and the models are normalised
 (max dimension = 1.0) to the source hand's real size, so the raw measure is
 converted to millimetres via `MEASURE_MM_PER_UNIT = 149.27` (the source hand's
-max dimension along its longest axis, in mm).
+max dimension along its longest axis, in mm). The hand is a free reconstruction
+inspired by the historic plate, so its absolute metric values are indicative.
 
 ## Default subject: a nod to Roentgen
 
@@ -164,17 +169,27 @@ coordinate system.
 
 ## Roadmap
 
-- ~~**v2.0** — real-time transparency slider~~ *(done)*: the slider maps linearly
-  onto `setInstanceTransparencyByName`, keeping `XRAY_ALPHA = 0.9` as default.
+- ~~**v2.0** — real-time transparency slider~~ *(done)*.
+- ~~**v2.1** — opacity slider (opaque ↔ transparent) + measure calibration fix~~
+  *(done)*.
 - Optional polish: localise the remaining toolbar tooltips to Italian.
 
 ## Version notes
 
-**v2.0** (this revision):
+**v2.1** (this revision):
 
-- added the **X-Ray intensity slider** (bottom centre, always active): 100% = fully
-  opaque, 0% = fully transparent, dragged live (classic alpha compositing, so the
-  opacity fades smoothly instead of the stock additive "ghost");
+- **opacity slider**: 100% = fully opaque, 0% = fully transparent, dragged live —
+  the shell is composited with standard alpha blending (a runtime `gl.blendFunc`
+  rewrite in the page) instead of the stock additive "ghost", so the opacity fades
+  smoothly (the same tool as the Similaun-mummy project);
+- **measurement fix**: `MEASURE_MM_PER_UNIT` overestimated every measurement by
+  ~20% (it wrongly divided the raw model measure by the viewer's scene-radius
+  scaling); it is now `149.27` (raw model unit → mm).
+
+**v2.0**:
+
+- added the **X-Ray intensity slider** (bottom centre, always active): dragging it
+  enables x-ray and updates the shell's transparency in real time;
 - fixed slider dragging against `#3dhop`'s `mousedown` preventDefault;
 - added the standard 3DHOP **measure tool** with millimetre calibration and a
   localised "Lunghezza misurata" box (the stock `measure`/`measure_on` icons and
