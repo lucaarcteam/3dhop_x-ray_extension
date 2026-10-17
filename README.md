@@ -113,10 +113,11 @@ as an on/off shortcut that re-uses the slider's current value.
 
 ### Measure tool (mm)
 
-The standard 3DHOP measure tool is wired to `presenter._onEndMeasurement`. The
-models are normalised (max dimension = 1.0), so the raw measure is rescaled to
-millimetres via `MEASURE_MM_PER_UNIT` (derived from the source hand's real size,
-149.27 mm along its max dimension, and 3DHOP's "scene" radius scaling).
+The standard 3DHOP measure tool is wired to `presenter._onEndMeasurement`.
+3DHOP reports measurements in raw (model) units and the models are normalised
+(max dimension = 1.0) to the source hand's real size, so the raw measure is
+converted to millimetres via `MEASURE_MM_PER_UNIT = 149.27` (the source hand's
+max dimension along its longest axis, in mm).
 
 ## Default subject: a nod to Roentgen
 

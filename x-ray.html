@@ -223,11 +223,19 @@ function xraySliderUpdate(value) {
 
 // +++ MEASURE TOOL +++ //
 // Calibration: the source left hand (Z-Anatomy) spans 149.27 mm along its max
-// dimension; our models are normalised so that dimension = 1.0. The viewer
-// ("scene" radius mode, space.transform = identity) rescales the world by
+// dimension; our models are normalised so that dimension = 1.0 (the combined
+// meshes span exactly 1.0 along their longest axis), hence 1 measured unit
+// equals 149.27 mm.
+//
+// NOTE: 3DHOP's measurement is already expressed in RAW model units, so the
+// viewer's framing rescale must NOT be applied here. The picked depth is
+// unprojected through the inverse of (projection * view * model), and the
+// "model" matrix already carries the scene scale
 //   sceneRadiusInv = 1 / (Rmax * sqrt(3))   with Rmax = max(datasetRadius)
-// so a measured (world) unit equals 149.27 / sceneRadiusInv millimetres.
-var MEASURE_MM_PER_UNIT = 179.4712;   // mm per measured unit
+// so that rescale cancels out (space/instance/mesh transforms are identity).
+// The previous value (179.4712 = 149.27 / sceneRadiusInv) overestimated every
+// measurement by ~20%.
+var MEASURE_MM_PER_UNIT = 149.27;   // mm per measured unit
 
 function onEndMeasure(measure) {
 	jQuery('#measure-output').html((measure * MEASURE_MM_PER_UNIT).toFixed(1) + " mm");
